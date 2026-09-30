@@ -22,6 +22,26 @@ convertisseur PDF de MODELES. Source : branche `production` de
 |`finance/partiduo-app-devel`
 |`partiduo-app-devel`
 |Même chose, branche `development` (port esclave).
+
+|`finance/partiduo-admin`
+|`partiduo-admin`
+|Administration du parc : application web (`partiduo-admin`), ligne de
+commande (`partiduo-admin-manage`), script rc.d `partiduo_admin`,
+planification cron. Source : branche `production` de
+`aloli-crystal/partiduo-admin` (*en attente* de cette branche).
+
+|`finance/partiduo-admin-devel`
+|`partiduo-admin-devel`
+|Même chose, branche `development` (port esclave).
+
+|`sysutils/partiduo-agent`
+|`partiduo-agent`
+|Exécutant de l'administration sur un serveur d'hébergement, ses deux
+enveloppes de sudo et leurs règles. Même source que `partiduo-admin`.
+
+|`sysutils/partiduo-agent-devel`
+|`partiduo-agent-devel`
+|Même chose, branche `development` (port esclave).
 |===
 
 Les deux versions *cohabitent* sur un serveur, chacune dans son répertoire :
@@ -50,6 +70,51 @@ n'appartient qu'à une version (`partiduo_instances` ou
 journal `/var/log/partiduo/<instance>.log`. Le compte `partiduo` est créé à
 l'installation s'il n'existe pas.
 
+=== Administration et exécutant
+
+Au contraire des instances, il n'y a qu'*une* administration et qu'*un*
+exécutant par serveur : `partiduo-admin-devel` et `partiduo-agent-devel`
+s'installent aux mêmes emplacements que `partiduo-admin` et
+`partiduo-agent`, avec lesquels ils sont en conflit (`CONFLICTS_INSTALL`).
+
+[source]
+----
+/usr/local/lib/partiduo-admin/
+  bin/partiduo-admin                  serveur (127.0.0.1, PORT)
+  bin/partiduo-admin-manage           migrate, bootstrap, schedule…
+  share/partiduo-admin/assets/        fichiers statiques (collectassets)
+  share/partiduo-admin/artifacts/     gabarits et traductions (collectartifacts)
+/usr/local/bin/partiduo-admin-manage
+/usr/local/etc/rc.d/partiduo_admin    migrations puis serveur (daemon -r)
+/usr/local/etc/cron.d/partiduo-admin  schedule toutes les 15 minutes (lockf)
+/usr/local/etc/partiduo-admin/admin.env        root:partiduo-admin 0640 (@sample)
+/var/db/partiduo-admin/                        travail, verrou de la planification
+/var/log/partiduo-admin.log, /var/log/partiduo-admin/schedule.log
+
+/usr/local/bin/partiduo-agent
+/usr/local/libexec/partiduo-agent/partiduo-agent-{root,instance}   root 0755
+/usr/local/etc/sudoers.d/partiduo-agent                            root 0440
+/usr/local/etc/partiduo-agent/helpers.conf                         root 0644 (@sample)
+/usr/local/etc/rc.d/partiduo_agent    partiduo_agent_flags : options de l'exécutant
+/var/backups/partiduo/                partiduo:partiduo-agent 0770
+/var/db/partiduo-stage/               partiduo:partiduo 0750
+/var/db/partiduo-agent/               partiduo-agent 0700
+----
+
+Comptes créés à l'installation s'ils n'existent pas : `partiduo-admin` par
+`partiduo-admin`, `partiduo-agent` (et `partiduo`, comme `partiduo-app`,
+pour que les répertoires lui appartiennent quel que soit l'ordre
+d'installation) par `partiduo-agent`.
+
+*Sources partagées* : l'administration et l'exécutant sont construits depuis
+le même projet (`aloli-crystal/partiduo-admin`) et les mêmes shards. Les
+sources d'une branche (`Makefile.version`, `Makefile.shards`, `distinfo`,
+`shard.lock.packaging`) ne sont rangées qu'une fois, dans
+`finance/partiduo-admin` (production) et `finance/partiduo-admin-devel`
+(development) ; `sysutils/partiduo-agent[-devel]` les lisent là
+(`PARTIDUO_ADMIN_SOURCES`). Une seule génération sert les deux paquets,
+qui ne peuvent pas diverger.
+
 == Sources hors ligne : `Tools/shards-tuples`
 
 poudriere construit sans réseau. Chaque shard du `shard.lock` du projet
@@ -68,6 +133,34 @@ La version passée doit être le `DISTVERSION` du port (elle entre dans le nom
 de l'archive principale). Les `shard.lock` ne doivent contenir aucune
 dépendance `path:` : l'outil les refuse.
 
+`SHARDS_TUPLES_LOCK=<fichier>` fait lire un `shard.lock` local au lieu de
+celui du dépôt au commit (l'archive principale reste celle du commit).
+
+=== Projets aux shards maison en `path:` : `Tools/packaging-lock`
+
+`partiduo-admin` déclare ses shards maison en `path: ../../<nom>` (marten,
+authn, jose, totp, webauthn, password-policy ; `shard.yml` et
+`shard.override.yml`) : son `shard.lock` n'est pas empaquetable.
+`Tools/packaging-lock` en produit un *lock d'empaquetage* : il télécharge
+`shard.yml` (et `shard.override.yml`) au commit, réécrit chaque
+`path: ../../<nom>` en `github: aloli-crystal/<nom>` + `branch: production`
+(les shards maison empaquetés suivent leur branche production), retire
+`development_dependencies`, lance `shards lock` (réseau GitHub, `shards`
+installé) et écrit le résultat, conservé dans le répertoire du port. Toute
+autre forme de `path:` est refusée.
+
+[source,sh]
+----
+C=$(git ls-remote https://github.com/aloli-crystal/partiduo-admin refs/heads/development | cut -f1)
+Tools/packaging-lock aloli-crystal/partiduo-admin $C finance/partiduo-admin-devel/shard.lock.packaging
+SHARDS_TUPLES_LOCK=finance/partiduo-admin-devel/shard.lock.packaging \
+  Tools/shards-tuples aloli-crystal/partiduo-admin $C 0.1.0.20260930 finance/partiduo-admin-devel
+# puis la même version dans finance/partiduo-admin-devel/Makefile.version
+----
+
+Ces sources servent aussi à `sysutils/partiduo-agent-devel` (voir plus
+haut) : rien à générer pour l'exécutant.
+
 == Machine de construction
 
 Sur la machine poudriere (FreeBSD 15.0, jail `fbsd150amd64`, arbre `default`) :
@@ -77,6 +170,7 @@ Sur la machine poudriere (FreeBSD 15.0, jail `fbsd150amd64`, arbre `default`) :
 git clone <dépôt aloli-ports> /usr/local/poudriere/aloli-ports
 poudriere ports -c -p aloli -m null -M /usr/local/poudriere/aloli-ports
 poudriere bulk -j fbsd150amd64 -p default -O aloli finance/partiduo-app-devel
+poudriere bulk -j fbsd150amd64 -p default -O aloli finance/partiduo-admin-devel sysutils/partiduo-agent-devel
 ----
 
 == À vérifier au premier passage sur la machine de construction
@@ -91,3 +185,7 @@ poste macOS, sans poudriere.
 * `collectassets` et `collectartifacts` lancés à la construction : aucune
   base ouverte (vérifié sous macOS).
 * Script `rc.d` : démarrage, arrêt et état d'une instance sous `daemon(8)`.
+* `partiduo-admin` et `partiduo-agent` : `@sample` avec propriétaire et mode
+  (`admin.env` root:partiduo-admin 0640), `@dir` possédés par les comptes
+  créés en `pkg-install`, conflit entre version et `-devel`, lecture de
+  `sudoers.d` par sudo (`visudo -c`), planification cron.

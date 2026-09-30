@@ -1,0 +1,11 @@
+Partiduo administration manages the life cycle of a fleet of Partiduo
+instances (aloli-crystal/partiduo-admin): firms, administration users,
+payers, inventory of instances and of the package serving each one,
+servers, task queue, backups (optionally encrypted), supervision, alerts
+and an append-only audit journal. It never reads the accounting data of
+the instances.
+
+This package installs the web application (partiduo-admin), its command
+line (partiduo-admin-manage), the rc.d script partiduo_admin and a cron
+job running the scheduler every fifteen minutes. The executor installed on
+each hosting server is packaged separately (partiduo-agent).

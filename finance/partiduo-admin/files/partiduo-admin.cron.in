@@ -1,0 +1,13 @@
+# %%PREFIX%%/etc/cron.d/partiduo-admin — installé par %%PKGNAME%%.
+#
+# Planification de l'administration Partiduo toutes les quinze minutes
+# (partiduo-admin-manage schedule) : sauvegardes planifiées, élagages,
+# restaurations test, supervision, alertes. Sous le compte partiduo-admin,
+# avec l'environnement de l'application (admin.env, lu par sh) ; lockf -t 0
+# écarte un passage tant que le précédent n'est pas fini. Rien n'est lancé
+# tant que admin.env n'existe pas. Journal :
+# /var/log/partiduo-admin/schedule.log.
+SHELL=/bin/sh
+PATH=/etc:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+
+*/15	*	*	*	*	partiduo-admin	[ -r %%PREFIX%%/etc/partiduo-admin/admin.env ] && cd /var/db/partiduo-admin && /usr/bin/lockf -t 0 /var/db/partiduo-admin/schedule.lock /bin/sh -c 'set -a && . %%PREFIX%%/etc/partiduo-admin/admin.env && set +a && exec %%PARTIDUO_ADMIN_HOME%%/bin/partiduo-admin-manage schedule' >>/var/log/partiduo-admin/schedule.log 2>&1

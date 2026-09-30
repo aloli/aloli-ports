@@ -1,0 +1,26 @@
+#!/bin/sh
+# Comptes système de l'exécutant Partiduo, partagés par partiduo-agent et
+# partiduo-agent-devel (identifiants attribués par pw : l'overlay aloli-ports
+# ne réserve pas d'entrée dans les fichiers UIDs/GIDs de l'arbre des ports).
+#
+# partiduo-agent : compte de l'exécutant (groupe partiduo-agent, par lequel
+# il écrit dans /var/backups/partiduo). partiduo : compte des instances,
+# créé ici comme par partiduo-app (mêmes attributs) s'il n'existe pas
+# encore, pour que les répertoires du paquet lui appartiennent quel que
+# soit l'ordre d'installation.
+[ "$2" = "PRE-INSTALL" ] || exit 0
+if ! pw groupshow partiduo >/dev/null 2>&1; then
+	pw groupadd partiduo || exit 1
+fi
+if ! pw usershow partiduo >/dev/null 2>&1; then
+	pw useradd partiduo -g partiduo -c "Partiduo" -d /nonexistent \
+		-s /usr/sbin/nologin || exit 1
+fi
+if ! pw groupshow partiduo-agent >/dev/null 2>&1; then
+	pw groupadd partiduo-agent || exit 1
+fi
+if ! pw usershow partiduo-agent >/dev/null 2>&1; then
+	pw useradd partiduo-agent -g partiduo-agent -c "Partiduo agent" \
+		-d /nonexistent -s /usr/sbin/nologin || exit 1
+fi
+exit 0

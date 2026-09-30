@@ -1,0 +1,11 @@
+partiduo-agent is the executor of the Partiduo fleet administration
+(aloli-crystal/partiduo-admin), installed on each hosting server. It pulls
+its tasks over HTTPS with the server token and carries them out on the
+Partiduo instances of the same server (packages partiduo-app and
+partiduo-app-devel): creation, suspension, archiving, backups (optionally
+encrypted), restorations, supervision.
+
+Privileged steps go through two wrapper scripts owned by root, the only
+commands allowed by sudo (sudoers.d/partiduo-agent), which validate each
+argument and read their configuration from
+/usr/local/etc/partiduo-agent/helpers.conf.

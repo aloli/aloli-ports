@@ -1,0 +1,122 @@
+#!/bin/sh
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# packaging-lock — shard.lock d'empaquetage d'un projet Crystal qui déclare
+# ses shards maison en `path:` (ex. aloli-crystal/partiduo-admin : marten,
+# authn, jose… en `path: ../../<nom>`). Son propre shard.lock contient alors
+# des entrées path:, introuvables hors du poste de développement, que
+# Tools/shards-tuples refuse.
+#
+# Usage :
+#   Tools/packaging-lock COMPTE/PROJET COMMIT SORTIE
+#
+#   COMPTE/PROJET  dépôt GitHub du projet (ex. aloli-crystal/partiduo-admin)
+#   COMMIT         commit du projet (empreinte complète)
+#   SORTIE         fichier shard.lock à écrire (ex.
+#                  finance/partiduo-admin-devel/shard.lock.packaging)
+#
+# Télécharge shard.yml (et shard.override.yml s'il existe) du projet à ce
+# commit, puis, dans un répertoire temporaire :
+#   - réécrit chaque dépendance `path: ../../<nom>` (des deux fichiers) en
+#     `github: aloli-crystal/<nom>` + `branch: production` : les shards
+#     maison empaquetés suivent leur branche production ; toute autre forme
+#     de `path:` est refusée ;
+#   - retire development_dependencies ;
+#   - lance `SKIP_MARTEN_CLI_PRECOMPILATION=1 shards lock` (réseau GitHub) ;
+# et copie le shard.lock obtenu vers SORTIE, à passer ensuite à
+# Tools/shards-tuples (SHARDS_TUPLES_LOCK=SORTIE).
+#
+# Requis : curl, awk, shards (et git, qu'utilise shards).
+set -eu
+
+die() {
+  echo "packaging-lock : $*" >&2
+  exit 1
+}
+
+[ $# -eq 3 ] || die "usage : Tools/packaging-lock COMPTE/PROJET COMMIT SORTIE"
+REPO="$1"
+COMMIT="$2"
+OUTPUT="$3"
+
+case "$REPO" in
+  */*) ;;
+  *) die "COMPTE/PROJET attendu ($REPO)" ;;
+esac
+case "$COMMIT" in
+  *[!0-9a-f]* | "") die "COMMIT : empreinte hexadécimale attendue ($COMMIT)" ;;
+esac
+[ ${#COMMIT} -eq 40 ] || die "COMMIT : empreinte complète (40 caractères) attendue"
+[ -d "$(dirname "$OUTPUT")" ] || die "répertoire de sortie introuvable : $(dirname "$OUTPUT")"
+command -v shards >/dev/null 2>&1 || die "shards introuvable"
+
+# Compte des shards maison et branche suivie par l'empaquetage.
+HOME_ACCOUNT=aloli-crystal
+HOME_BRANCH=production
+
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/packaging-lock.XXXXXX")
+trap 'rm -rf "$WORK"' EXIT
+trap 'exit 1' INT TERM
+
+RAW="https://raw.githubusercontent.com/$REPO/$COMMIT"
+curl -fsSL -o "$WORK/shard.yml.orig" "$RAW/shard.yml" ||
+  die "shard.yml introuvable pour $REPO $COMMIT (commit publié ?)"
+# shard.override.yml est facultatif : 404 = absent, toute autre erreur arrête.
+status=$(curl -sSL -o "$WORK/shard.override.yml.orig" -w '%{http_code}' "$RAW/shard.override.yml") ||
+  die "téléchargement impossible : shard.override.yml"
+case "$status" in
+  200) ;;
+  404) rm -f "$WORK/shard.override.yml.orig" ;;
+  *) die "shard.override.yml : réponse HTTP $status" ;;
+esac
+
+# Réécriture d'un fichier shard.yml / shard.override.yml. Les dépendances
+# en path: sont des blocs YAML de la forme
+#     nom:
+#       path: ../../nom
+# (clé `path:` seule sur sa ligne) ; toute autre forme est refusée, comme un
+# `path:` en ligne ({ path: … }).
+rewrite() {
+  awk -v account="$HOME_ACCOUNT" -v branch="$HOME_BRANCH" -v file="$2" '
+    function fail(msg) { print file ": " msg > "/dev/stderr"; bad = 1 }
+    # Retrait du bloc development_dependencies entier.
+    /^development_dependencies:/ { skip = 1; next }
+    skip && /^[^ \t#]/ { skip = 0 }
+    skip { next }
+    /^[ \t]+path:/ {
+      indent = $0; sub(/path:.*/, "", indent)
+      value = $0; sub(/^[ \t]+path:[ \t]*/, "", value); sub(/[ \t]+#.*$/, "", value)
+      gsub(/["\047]/, "", value); sub(/[ \t]+$/, "", value)
+      if (value !~ /^\.\.\/\.\.\/[A-Za-z0-9._-]+$/ || value ~ /^\.\.\/\.\.\/\.+$/) {
+        fail("dépendance path: " value " refusée (seule la forme ../../<nom> est admise)")
+        next
+      }
+      name = value; sub(/^\.\.\/\.\.\//, "", name)
+      print indent "github: " account "/" name
+      print indent "branch: " branch
+      next
+    }
+    /^[^#]*[{,][ \t]*path:/ { fail("path: en ligne refusé : " $0); next }
+    { print }
+    END { if (bad) exit 1 }
+  ' "$1"
+}
+
+rewrite "$WORK/shard.yml.orig" shard.yml >"$WORK/shard.yml" ||
+  die "shard.yml : dépendances path: non réécrites (ci-dessus)"
+if [ -f "$WORK/shard.override.yml.orig" ]; then
+  rewrite "$WORK/shard.override.yml.orig" shard.override.yml >"$WORK/shard.override.yml" ||
+    die "shard.override.yml : dépendances path: non réécrites (ci-dessus)"
+fi
+rm -f "$WORK"/*.orig
+
+echo "== $REPO $COMMIT : shards lock ($HOME_ACCOUNT/<nom>, branche $HOME_BRANCH)"
+(cd "$WORK" && SKIP_MARTEN_CLI_PRECOMPILATION=1 shards lock) ||
+  die "shards lock a échoué"
+[ -s "$WORK/shard.lock" ] || die "shards lock n'a pas produit de shard.lock"
+if grep -q '^    path:' "$WORK/shard.lock"; then
+  die "shard.lock obtenu contient encore des dépendances path:"
+fi
+
+cp "$WORK/shard.lock" "$OUTPUT"
+echo "== $OUTPUT"

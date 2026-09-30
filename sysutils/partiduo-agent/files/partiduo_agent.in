@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# PROVIDE: partiduo_agent
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+#
+# Exécutant de l'administration Partiduo (%%PKGNAME%%), au service des
+# instances des paquets partiduo-app et partiduo-app-devel de ce serveur.
+#
+# Dans /etc/rc.conf :
+#   partiduo_agent_enable="YES"
+#   partiduo_agent_flags="--mode production --admin-url https://admin.partiduo.app \
+#     --token-file %%PREFIX%%/etc/partiduo-agent/agent.token --domain partiduo.app \
+#     --mail-command '/usr/sbin/sendmail -oi' --mail-from noreply@partiduo.app"
+#
+# Options de l'exécutant : partiduo-agent --help. --domain : même valeur que
+# DOMAIN de %%PREFIX%%/etc/partiduo-agent/helpers.conf. Défauts :
+# --state-dir /var/db/partiduo-agent, --backup-dir /var/backups/partiduo,
+# --pg-socket /tmp, --helpers-dir %%PREFIX%%/libexec/partiduo-agent.
+#
+#   %%PREFIX%%/etc/partiduo-agent/agent.token   jeton du serveur, partiduo-agent, 600 ;
+#   /var/log/partiduo-agent.log                   journal ;
+#   /var/run/partiduo-agent.pid                   processus superviseur (daemon -r).
+#
+# Sans « --mode production », l'exécutant ne démarre pas : son mode par
+# défaut (à blanc) simulerait les tâches du parc.
+
+. /etc/rc.subr
+
+name=partiduo_agent
+rcvar=partiduo_agent_enable
+
+load_rc_config $name
+
+: ${partiduo_agent_enable:="NO"}
+: ${partiduo_agent_flags:=""}
+
+# Les options vont à l'exécutant, pas à daemon(8) : rc.subr les placerait
+# juste après la commande (daemon).
+_agent_flags="${flags:-${partiduo_agent_flags}}"
+partiduo_agent_flags=""
+unset flags
+
+# Compte des processus : celui que crée le paquet. (Pas de
+# partiduo_agent_user : rc.subr lancerait alors daemon(8) lui-même sous ce
+# compte, qui ne pourrait plus écrire le fichier pid ni changer d'identité.)
+_account="partiduo-agent"
+workdir="/var/db/partiduo-agent"
+logfile="/var/log/partiduo-agent.log"
+pidfile="/var/run/partiduo-agent.pid"
+agent="%%PREFIX%%/bin/partiduo-agent"
+
+command="/usr/sbin/daemon"
+procname="/usr/sbin/daemon"
+command_args="-r -R 5 -P ${pidfile} -o ${logfile} -T ${name} -u ${_account} \
+	${agent} ${_agent_flags}"
+partiduo_agent_chdir="${workdir}"
+start_precmd="${name}_prestart"
+
+partiduo_agent_prestart()
+{
+	case " ${_agent_flags} " in
+	*" --mode production "* | *" --mode=production "*) ;;
+	*)
+		err 1 "partiduo_agent_flags : --mode production et les options de l'exécutant requises (voir ${agent} --help)"
+		;;
+	esac
+	install -d -o "${_account}" -g "${_account}" -m 700 "${workdir}"
+}
+
+run_rc_command "$1"

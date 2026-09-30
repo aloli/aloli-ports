@@ -1,0 +1,5 @@
+# Version des sources de partiduo-admin (DISTVERSION), commune aux ports
+# finance/partiduo-admin-devel et sysutils/partiduo-agent-devel : elle entre
+# dans le nom de l'archive principale (distinfo). Même valeur que la VERSION
+# passée à Tools/shards-tuples.
+DISTVERSION=	0.1.0.20260930

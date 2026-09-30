@@ -1,0 +1,42 @@
+[
+{ type: install
+  message: <<EOM
+%%PKGNAME%% est installé. L'exécutant ne sert que les instances des
+paquets partiduo-app et partiduo-app-devel de CE serveur : installez-les
+ici (pkg install partiduo-app, et partiduo-app-devel au besoin).
+
+Il lui faut aussi, sur ce serveur : PostgreSQL (socket /tmp,
+authentification peer), nginx (include partiduo/*.conf; dans le bloc http
+de %%PREFIX%%/etc/nginx/nginx.conf), certbot (défi HTTP-01) et, pour
+remettre les invitations, un MTA local (--mail-command).
+
+1. Enveloppes de sudo : %%PREFIX%%/etc/partiduo-agent/helpers.conf (root,
+   0644, modèle helpers.conf.sample) : DOMAIN, ACME_EMAIL… Les règles
+   %%PREFIX%%/etc/sudoers.d/partiduo-agent sont lues par la configuration
+   par défaut de sudo (@includedir %%PREFIX%%/etc/sudoers.d) ; si
+   %%PREFIX%%/etc/sudoers a été modifié, vérifiez cette ligne, puis :
+
+  visudo -c
+
+2. Rôle PostgreSQL des instances et clé du serveur des sauvegardes (à
+   copier hors du serveur) :
+
+  su -m postgres -c 'createuser --createdb --no-superuser partiduo'
+  su -m partiduo-agent -c 'partiduo-agent server-key --state-dir /var/db/partiduo-agent'
+
+3. Jeton du serveur (affiché à sa création dans l'administration) :
+
+  install -o partiduo-agent -g partiduo-agent -m 600 jeton.txt %%PREFIX%%/etc/partiduo-agent/agent.token
+
+4. Service :
+
+  sysrc partiduo_agent_enable=YES
+  sysrc partiduo_agent_flags="--mode production --admin-url https://admin.partiduo.app --token-file %%PREFIX%%/etc/partiduo-agent/agent.token --domain partiduo.app --mail-command '/usr/sbin/sendmail -oi' --mail-from noreply@partiduo.app"
+  service partiduo_agent start
+
+Répertoires créés par le paquet : /var/backups/partiduo (partiduo:partiduo-agent
+0770), /var/db/partiduo-stage (partiduo:partiduo 0750), /var/db/partiduo-agent
+(partiduo-agent 0700).
+EOM
+}
+]

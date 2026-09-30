@@ -20,6 +20,13 @@
 #   distinfo         empreintes et tailles des archives (téléchargées dans
 #                    ${SHARDS_TUPLES_CACHE:-~/.cache/aloli-ports/distfiles}).
 #
+# SHARDS_TUPLES_LOCK=FICHIER : lit ce shard.lock local au lieu de celui du
+# dépôt au commit, par exemple le lock d'empaquetage d'un projet qui déclare
+# ses shards maison en path: (Tools/packaging-lock) :
+#   SHARDS_TUPLES_LOCK=finance/partiduo-admin-devel/shard.lock.packaging \
+#     Tools/shards-tuples aloli-crystal/partiduo-admin <commit> <version> finance/partiduo-admin-devel
+# L'archive principale reste celle du projet au COMMIT donné.
+#
 # Seuls git, curl, awk et sha256sum (ou shasum, ou sha256) sont requis :
 # l'outil tourne sur un poste de développement comme sur la machine de
 # construction.
@@ -53,7 +60,7 @@ if command -v sha256sum >/dev/null 2>&1; then
 elif command -v shasum >/dev/null 2>&1; then
   sha256() { shasum -a 256 "$1" | awk '{print $1}'; }
 else
-  sha256() { sha256 -q "$1"; }
+  sha256() { command sha256 -q "$1"; }
 fi
 
 # Archive GitHub d'un commit, dans le cache ; affiche son nom de fichier.
@@ -82,8 +89,15 @@ resolve() {
   esac
 }
 
-LOCK=$(curl -fsSL "https://raw.githubusercontent.com/$REPO/$COMMIT/shard.lock") ||
-  die "shard.lock introuvable pour $REPO $COMMIT (commit publié ?)"
+if [ -n "${SHARDS_TUPLES_LOCK:-}" ]; then
+  [ -r "$SHARDS_TUPLES_LOCK" ] || die "shard.lock local illisible : $SHARDS_TUPLES_LOCK"
+  LOCK=$(cat "$SHARDS_TUPLES_LOCK")
+  LOCK_SOURCE="$SHARDS_TUPLES_LOCK"
+else
+  LOCK=$(curl -fsSL "https://raw.githubusercontent.com/$REPO/$COMMIT/shard.lock") ||
+    die "shard.lock introuvable pour $REPO $COMMIT (commit publié ?)"
+  LOCK_SOURCE=shard.lock
+fi
 
 # nom, source git, version — une ligne par shard.
 ENTRIES=$(echo "$LOCK" | awk '
@@ -132,7 +146,7 @@ count=$(wc -l <"$CACHE/.tuples.$$" | tr -d ' ')
 rm -f "$CACHE/.tuples.$$"
 
 {
-  echo "# Produit par Tools/shards-tuples ($REPO, shard.lock) — ne pas modifier à la main."
+  echo "# Produit par Tools/shards-tuples ($REPO, $LOCK_SOURCE) — ne pas modifier à la main."
   echo "GH_TAGNAME=	$COMMIT"
   printf 'GH_TUPLE=	\\\n%s' "$TUPLES" | sed '$ s/ \\$//'
 } >"$PORT/Makefile.shards"

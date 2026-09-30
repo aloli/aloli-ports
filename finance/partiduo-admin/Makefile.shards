@@ -1,0 +1,7 @@
+# Produit par Tools/shards-tuples — ne pas modifier à la main.
+# En attente : la branche production de partiduo-admin n'existe pas encore.
+# Une fois publiée (voir README.adoc, « Sources hors ligne ») :
+#   Tools/packaging-lock aloli-crystal/partiduo-admin <commit> finance/partiduo-admin/shard.lock.packaging
+#   SHARDS_TUPLES_LOCK=finance/partiduo-admin/shard.lock.packaging \
+#     Tools/shards-tuples aloli-crystal/partiduo-admin <commit> <version> finance/partiduo-admin
+IGNORE=		attend la branche production de partiduo-admin (Tools/packaging-lock, Tools/shards-tuples)

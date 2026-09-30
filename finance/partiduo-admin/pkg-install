@@ -1,0 +1,13 @@
+#!/bin/sh
+# Compte système de l'administration Partiduo, partagé par partiduo-admin et
+# partiduo-admin-devel (identifiant attribué par pw : l'overlay aloli-ports
+# ne réserve pas d'entrée dans les fichiers UIDs/GIDs de l'arbre des ports).
+[ "$2" = "PRE-INSTALL" ] || exit 0
+if ! pw groupshow partiduo-admin >/dev/null 2>&1; then
+	pw groupadd partiduo-admin || exit 1
+fi
+if ! pw usershow partiduo-admin >/dev/null 2>&1; then
+	pw useradd partiduo-admin -g partiduo-admin -c "Partiduo administration" \
+		-d /nonexistent -s /usr/sbin/nologin || exit 1
+fi
+exit 0

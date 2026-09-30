@@ -1,0 +1,73 @@
+#!/bin/sh
+
+# PROVIDE: partiduo_admin
+# REQUIRE: LOGIN postgresql
+# KEYWORD: shutdown
+#
+# Administration du parc Partiduo servie par %%PKGNAME%% (%%PARTIDUO_ADMIN_HOME%%).
+#
+# Dans /etc/rc.conf :
+#   partiduo_admin_enable="YES"
+#
+#   %%PREFIX%%/etc/partiduo-admin/admin.env   variables (MARTEN_ENV=production,
+#                         DATABASE_URL, MARTEN_SECRET_KEY, PARTIDUO_DOMAIN…,
+#                         voir admin.env.sample), root:partiduo-admin, 640 ;
+#   /var/db/partiduo-admin                     répertoire de travail ;
+#   /var/log/partiduo-admin.log                journal ;
+#   /var/run/partiduo-admin.pid                processus superviseur (daemon -r).
+#
+# Au démarrage, les migrations de l'administration passent d'abord
+# (partiduo-admin-manage migrate) : après une mise à jour du paquet,
+# « service partiduo_admin restart » suffit. Si la migration échoue, le
+# serveur ne démarre pas (voir le journal).
+#
+# La planification (partiduo-admin-manage schedule, toutes les quinze
+# minutes) est lancée par cron : %%PREFIX%%/etc/cron.d/partiduo-admin.
+
+. /etc/rc.subr
+
+name=partiduo_admin
+rcvar=partiduo_admin_enable
+
+load_rc_config $name
+
+: ${partiduo_admin_enable:="NO"}
+
+# Compte des processus : celui que crée le paquet. (Pas de
+# partiduo_admin_user : rc.subr lancerait alors daemon(8) lui-même sous ce
+# compte, qui ne pourrait plus écrire le fichier pid ni changer d'identité.)
+_account="partiduo-admin"
+envfile="%%PREFIX%%/etc/partiduo-admin/admin.env"
+workdir="/var/db/partiduo-admin"
+logfile="/var/log/partiduo-admin.log"
+pidfile="/var/run/partiduo-admin.pid"
+server="%%PARTIDUO_ADMIN_HOME%%/bin/partiduo-admin"
+manage="%%PARTIDUO_ADMIN_HOME%%/bin/partiduo-admin-manage"
+
+command="/usr/sbin/daemon"
+procname="/usr/sbin/daemon"
+command_args="-r -R 5 -P ${pidfile} -o ${logfile} -T ${name} -u ${_account} \
+	/bin/sh -c 'cd ${workdir} && set -a && . ${envfile} && set +a && exec ${server}'"
+start_precmd="${name}_prestart"
+
+partiduo_admin_prestart()
+{
+	if [ ! -r "${envfile}" ]; then
+		err 1 "${envfile} introuvable (modèle : ${envfile}.sample)"
+	fi
+	# Réglages sans lesquels la production ne doit pas démarrer (modèle
+	# encore vide, réglages de développement).
+	if ! (set -a && . "${envfile}" && [ "${MARTEN_ENV}" = production ] &&
+	    [ -n "${MARTEN_SECRET_KEY}" ] && [ -n "${DATABASE_URL}" ]); then
+		err 1 "${envfile} : MARTEN_ENV=production, MARTEN_SECRET_KEY et DATABASE_URL requis"
+	fi
+	install -d -o "${_account}" -g "${_account}" -m 750 "${workdir}"
+	echo "${name} : migrations"
+	# su -m lance le shell de root : /bin/sh explicite.
+	if ! su -m "${_account}" -c "/bin/sh -c 'cd ${workdir} && set -a && . ${envfile} && set +a && exec ${manage} migrate'" \
+	    >>"${logfile}" 2>&1; then
+		err 1 "échec des migrations, administration non démarrée (${logfile})"
+	fi
+}
+
+run_rc_command "$1"

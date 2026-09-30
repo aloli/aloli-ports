@@ -1,0 +1,31 @@
+[
+{ type: install
+  message: <<EOM
+%%PKGNAME%% est installé dans %%PARTIDUO_ADMIN_HOME%%.
+
+1. Base de l'administration (PostgreSQL, socket Unix) :
+
+  su -m postgres -c 'createuser partiduo-admin && createdb --owner=partiduo-admin --encoding=UTF8 partiduo_admin'
+
+2. Environnement : %%PREFIX%%/etc/partiduo-admin/admin.env (root:partiduo-admin,
+   0640, modèle admin.env.sample) ; renseignez au moins MARTEN_SECRET_KEY
+   (openssl rand -hex 32), DATABASE_URL et PARTIDUO_DOMAIN.
+
+3. Service (les migrations passent à chaque démarrage) :
+
+  sysrc partiduo_admin_enable=YES
+  service partiduo_admin start
+
+4. Premier super-admin (lien d'invitation affiché) :
+
+  su -m partiduo-admin -c "/bin/sh -c 'set -a && . %%PREFIX%%/etc/partiduo-admin/admin.env && set +a && partiduo-admin-manage bootstrap --email=vous@exemple.fr'"
+
+Le serveur écoute sur 127.0.0.1 (PORT, 8200 par défaut) : un serveur
+mandataire (nginx) sert admin.<domaine> en HTTPS et pose X-Forwarded-Proto.
+
+La planification (partiduo-admin-manage schedule) tourne toutes les quinze
+minutes par %%PREFIX%%/etc/cron.d/partiduo-admin dès que admin.env existe ;
+journal /var/log/partiduo-admin/schedule.log.
+EOM
+}
+]
