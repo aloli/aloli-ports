@@ -19,6 +19,11 @@
 #   /var/log/partiduo/<i>.log         journal ;
 #   /var/run/partiduo/<i>.pid         processus superviseur (daemon -r).
 #
+# Au démarrage, les migrations de l'instance passent d'abord
+# (partiduo-manage migrate) : après une mise à jour du paquet (pkg upgrade,
+# par beryl), « service %%PARTIDUO_RC%% restart » suffit. Une instance dont
+# la migration échoue ne démarre pas (voir son journal).
+#
 # Une instance n'appartient qu'à une version : ne la déclarez pas à la fois
 # dans partiduo_instances et partiduo_devel_instances.
 #
@@ -68,6 +73,7 @@ workdir="/var/db/partiduo/${instance}"
 logfile="/var/log/partiduo/${instance}.log"
 pidfile="/var/run/partiduo/${instance}.pid"
 server="%%PARTIDUO_HOME%%/bin/partiduo-server"
+manage="%%PARTIDUO_HOME%%/bin/partiduo-manage"
 
 command="/usr/sbin/daemon"
 procname="/usr/sbin/daemon"
@@ -82,6 +88,11 @@ start_precmd="${name}_prestart"
 	fi
 	install -d -o root -g wheel -m 755 /var/run/partiduo
 	install -d -o "${_user}" -g "${_user}" -m 750 /var/log/partiduo "${workdir}"
+	echo "${name} ${instance} : migrations"
+	if ! su -m "${_user}" -c "cd ${workdir} && set -a && . ${envfile} && set +a && exec ${manage} migrate" \
+	    >>"${logfile}" 2>&1; then
+		err 1 "${instance} : échec des migrations, instance non démarrée (${logfile})"
+	fi
 }
 
 run_rc_command "$1"
