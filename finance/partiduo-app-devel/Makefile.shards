@@ -1,4 +1,46 @@
-# Produit par Tools/shards-tuples — ne pas modifier à la main.
-# En attente de la publication de partiduo-dist (branche development) :
-# Tools/shards-tuples aloli-crystal/partiduo-dist <commit> <version> finance/partiduo-app-devel
-IGNORE=		attend la publication de partiduo-dist (Tools/shards-tuples)
+# Produit par Tools/shards-tuples (aloli-crystal/partiduo-dist, shard.lock) — ne pas modifier à la main.
+GH_TAGNAME=	91708256560c4bf5d155c672c822b3f1fc8674a4
+GH_TUPLE=	\
+		aloli-crystal:asciicrystal:1ec0da420c9f50bf5ba10ed64eaebb275bfe577d:asciicrystal/lib/asciicrystal \
+		aloli-crystal:asciicrystal-pdf:a893144e442257fdd3af7a39ce651276e926a68d:asciicrystal_pdf/lib/asciicrystal-pdf \
+		aloli-crystal:authn:dcaf7fbb4562c523f8b4911d304fc1ae5cad7cdd:authn/lib/authn \
+		jgaskins:bcrypt:4004f17053cba6f2c752ea83162f405143ab541c:bcrypt/lib/bcrypt \
+		spider-gazelle:bindata:f924e3a16a2fb47c0a84469d0afe5816ecabb1c8:bindata/lib/bindata \
+		aloli-crystal:country-flags:ac20c6be4312e3096184246d4b7e881640764f3b:country_flags/lib/country-flags \
+		crystal-lang:crystal-db:9fff44dd1f61446f9aaffafbb50c4118fe92a3dc:db/lib/db \
+		spider-gazelle:ed25519:c5b25bdc26559ce0c781947d4f82e4895ce7d3b1:ed25519/lib/ed25519 \
+		arcage:crystal-email:60fa798e121b3f210e95a0408f42d6eea87ead40:email/lib/email \
+		aloli-crystal:emojis:8c9ab8b7dddb5df8f0ec187b2e6a5cba2e6af0be:emojis/lib/emojis \
+		crystal-i18n:i18n:27730088123c00d1b61edd9b2d6a646952407f67:i18n/lib/i18n \
+		aloli-crystal:jose:f2b79a08169f13e7ad9156d630fda04043cabe67:jose/lib/jose \
+		crystal-community:jwt:e4dfc4c493f5a6c2b72ff5cff14b70e91e54a877:jwt/lib/jwt \
+		aloli-crystal:kramdown-asciidoc:55bea2df80c29d1066695ae562487f15bb00da98:kramdown_asciidoc/lib/kramdown-asciidoc \
+		aloli-crystal:marten:daabb7c242a307a1c90899acbbf5c40f170fe2b8:marten/lib/marten \
+		martenframework:marten-auth:bd93e72561a7f5719d10a2646d67f456be69b1a5:marten_auth/lib/marten_auth \
+		exilor:matrix:db74e62dcc0b65e548bf1a8eda65657310f57152:matrix/lib/matrix \
+		crystal-community:msgpack-crystal:4acaec3312683aea90ee8d0fe10f1e8fdf8f5fb7:msgpack/lib/msgpack \
+		aloli-crystal:noto-cjk:c8ed3077c806d9ec254e0e8847ca4305c45f996d:noto_cjk/lib/noto-cjk \
+		spider-gazelle:openssl_ext:b7c9ea5b1b79aa81fa014c05d0a21054ca2437fc:openssl_ext/lib/openssl_ext \
+		aloli-crystal:partiduo-app:bfbdf398ab35d4f71c8dc21fdc9d968de149f7d7:partiduo/lib/partiduo \
+		aloli-crystal:partiduo-choruspro:4b39fa413545c96eb7887a28c0b3706ac819c5b9:partiduo_choruspro/lib/partiduo-choruspro \
+		aloli-crystal:partiduo-crm:c0cfa63ad3886857aaae35e9fad058bf282f76a1:partiduo_crm/lib/partiduo-crm \
+		aloli-crystal:partiduo-document:6bb87ad135a360805bd2deadd4b67f49882f6abe:partiduo_document/lib/partiduo-document \
+		aloli-crystal:partiduo-einvoicing:708c610c043b4f6357f96880bb83b46be34b1a01:partiduo_einvoicing/lib/partiduo-einvoicing \
+		aloli-crystal:partiduo-esalink:d8a4acec5bdda482a89e84ee69ffb6fe73d1bdf6:partiduo_esalink/lib/partiduo-esalink \
+		aloli-crystal:partiduo-modeles:03ad0dec88cdee53baf1856c13bbf8c1f04bfedc:partiduo_modeles/lib/partiduo-modeles \
+		aloli-crystal:partiduo-superpdp:62c3e3ed61d99ee7e6c339aa14cd97e078c62a02:partiduo_superpdp/lib/partiduo-superpdp \
+		aloli-crystal:partiduo-teledec:e614093513ab896930a5f1db2cefe1e7aa40d440:partiduo_teledec/lib/partiduo-teledec \
+		aloli-crystal:partiduo-ui-bulma:ef76b8a9873b63cc712bc1e1e59f8b217a194336:partiduo_ui_bulma/lib/partiduo-ui-bulma \
+		aloli-crystal:partiduo-urssaf:e361b34c03b96df52d5b9858b813c2427916d93e:partiduo_urssaf/lib/partiduo-urssaf \
+		aloli-crystal:password-policy:2d41f8421f94f70c373b4be3b39f4011d09c7424:password_policy/lib/password-policy \
+		aloli-crystal:pdf:cca1b1ae700d7644c5e31bfe90d8e7a9ad93c7f0:pdf/lib/pdf \
+		aloli-crystal:pdf-a:e605508e58703ce5386eae9d5a467312538f14d6:pdf_a/lib/pdf-a \
+		aloli-crystal:pdf-validate:97cc8f0c54ed2bd213df6281e4107859e66f2b65:pdf_validate/lib/pdf-validate \
+		will:crystal-pg:1f4aefd82440cffd6e70ccb02b7d27bfbfc6d25d:pg/lib/pg \
+		aloli-crystal:rouge:f0ceddc61c635b7c122cee9bd9a76650587bddd3:rouge/lib/rouge \
+		aloli-crystal:saml:2590e659f826e5909177b5f2097d1d15b9c16117:saml/lib/saml \
+		stumpycr:stumpy_core:43c6ac723853c3b96377c98b5d0620b2e517c65b:stumpy_core/lib/stumpy_core \
+		stumpycr:stumpy_jpeg:714ad6c1f905cb503c53843cda8285f52592e2c2:stumpy_jpeg/lib/stumpy_jpeg \
+		stumpycr:stumpy_png:7e1caa8ed2c65e70b31ec575753a331cfbc25f9c:stumpy_png/lib/stumpy_png \
+		aloli-crystal:totp:f4d2cba2ce6630d6441bc85b2b06f662ab380fc2:totp/lib/totp \
+		aloli-crystal:webauthn:9df38fbe65ad709096ef5455c27e5e13f49dc66e:webauthn/lib/webauthn

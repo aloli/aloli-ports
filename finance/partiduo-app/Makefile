@@ -62,6 +62,7 @@ _PARTIDUO_PROGRAMS=	partiduo-server:src/server.cr \
 			partiduo-modeles-pdf:lib/partiduo-modeles/src/partiduo-modeles/pdf.cr
 
 do-build:
+	${MKDIR} ${WRKSRC}/bin
 .for _p in ${_PARTIDUO_PROGRAMS}
 	cd ${WRKSRC} && ${SETENV} ${_PARTIDUO_ENV} crystal build --release --no-debug \
 		-o bin/${_p:C/:.*//} ${_p:C/^[^:]*://}
