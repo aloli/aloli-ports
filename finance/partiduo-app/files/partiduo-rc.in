@@ -9,7 +9,9 @@
 # Dans /etc/rc.conf :
 #   %%PARTIDUO_RC%%_enable="YES"
 #   %%PARTIDUO_RC%%_instances="dupont martin"   # instances de cette version
-#   %%PARTIDUO_RC%%_user="partiduo"             # compte des serveurs
+#   %%PARTIDUO_RC%%_account="partiduo"          # compte des serveurs
+#   (pas ${name}_user : variable réservée de rc.subr, qui lancerait alors
+#   daemon(8) lui-même sous ce compte, sans droit d'écrire le pid ni de -u)
 #
 # Pour chaque instance <i> :
 #   /usr/local/etc/partiduo/<i>.env   variables (DATABASE_URL, MARTEN_SECRET_KEY,
@@ -38,10 +40,10 @@ load_rc_config $name
 
 : ${%%PARTIDUO_RC%%_enable:="NO"}
 : ${%%PARTIDUO_RC%%_instances:=""}
-: ${%%PARTIDUO_RC%%_user:="partiduo"}
+: ${%%PARTIDUO_RC%%_account:="partiduo"}
 
 _instances="${%%PARTIDUO_RC%%_instances}"
-_user="${%%PARTIDUO_RC%%_user}"
+_user="${%%PARTIDUO_RC%%_account}"
 
 # Sans instance nommée : chaque instance déclarée, l'une après l'autre.
 if [ -z "$2" ]; then
