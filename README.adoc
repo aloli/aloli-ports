@@ -35,7 +35,10 @@ Les deux versions *cohabitent* sur un serveur, chacune dans son répertoire :
   share/partiduo/artifacts/       gabarits et traductions (collectartifacts)
   share/partiduo/assets/          fichiers statiques (collectassets)
   share/partiduo-modeles-pdf/fonts -> /usr/local/share/fonts/dejavu
+  bin/partiduo-provision          création d'une instance (partiduo-app)
+  deploy/templates/               ses gabarits
 /usr/local/bin/partiduo-manage  /usr/local/bin/partiduo-devel-manage
+/usr/local/bin/partiduo-provision  /usr/local/bin/partiduo-devel-provision
 /usr/local/etc/rc.d/partiduo    /usr/local/etc/rc.d/partiduo_devel
 ----
 

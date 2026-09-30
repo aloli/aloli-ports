@@ -88,11 +88,19 @@ do-install:
 	${LN} -s ${PARTIDUO_HOME}/bin/partiduo-manage \
 		${STAGEDIR}${PREFIX}/bin/${PARTIDUO_NAME}-manage
 	${INSTALL_SCRIPT} ${WRKDIR}/partiduo-rc ${STAGEDIR}${PREFIX}/etc/rc.d/${PARTIDUO_RC}
+# Création d'une instance (partiduo-app, bin/partiduo-provision) : le script
+# trouve ses gabarits dans ../deploy/templates.
+	${INSTALL_SCRIPT} ${WRKSRC}/lib/partiduo/bin/partiduo-provision ${STAGEDIR}${PARTIDUO_HOME}/bin
+	${MKDIR} ${STAGEDIR}${PARTIDUO_HOME}/deploy
+	cd ${WRKSRC}/lib/partiduo/deploy && ${COPYTREE_SHARE} templates ${STAGEDIR}${PARTIDUO_HOME}/deploy
+	${LN} -s ${PARTIDUO_HOME}/bin/partiduo-provision \
+		${STAGEDIR}${PREFIX}/bin/${PARTIDUO_NAME}-provision
 
 post-install:
 	cd ${STAGEDIR}${PREFIX} && ${FIND} lib/${PARTIDUO_NAME} \( -type f -o -type l \) | \
 		${SORT} >> ${TMPPLIST}
 	${ECHO_CMD} bin/${PARTIDUO_NAME}-manage >> ${TMPPLIST}
+	${ECHO_CMD} bin/${PARTIDUO_NAME}-provision >> ${TMPPLIST}
 	${ECHO_CMD} etc/rc.d/${PARTIDUO_RC} >> ${TMPPLIST}
 
 .include <bsd.port.mk>
