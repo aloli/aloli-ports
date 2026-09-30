@@ -1,0 +1,90 @@
+= aloli-ports
+:icons: font
+
+Overlay de ports FreeBSD de la société ALOLI, construit par poudriere et
+publié sur `pkg.aloli.net`. Même machine de construction et même principe
+que `quimeo-ports` (beryl, `cli/adoc/poudriere-builder-implementation.adoc`) :
+l'overlay ne contient que nos propres logiciels ; tout le reste vient des
+paquets officiels.
+
+== Ports
+
+[cols="2,1,3",options="header"]
+|===
+|Port |Paquet |Contenu
+
+|`finance/partiduo-app`
+|`partiduo-app`
+|Serveur d'instance Partiduo : cœur, interface, toutes les extensions,
+convertisseur PDF de MODELES. Source : branche `production` de
+`aloli-crystal/partiduo-dist` (*en attente* de cette branche).
+
+|`finance/partiduo-app-devel`
+|`partiduo-app-devel`
+|Même chose, branche `development` (port esclave).
+|===
+
+Les deux versions *cohabitent* sur un serveur, chacune dans son répertoire :
+
+[source]
+----
+/usr/local/lib/partiduo/        /usr/local/lib/partiduo-devel/
+  bin/partiduo-server             (mêmes fichiers)
+  bin/partiduo-manage
+  bin/partiduo-modeles-pdf
+  share/partiduo/artifacts/       gabarits et traductions (collectartifacts)
+  share/partiduo/assets/          fichiers statiques (collectassets)
+  share/partiduo-modeles-pdf/fonts -> /usr/local/share/fonts/dejavu
+/usr/local/bin/partiduo-manage  /usr/local/bin/partiduo-devel-manage
+/usr/local/etc/rc.d/partiduo    /usr/local/etc/rc.d/partiduo_devel
+----
+
+Tout ce qu'un programme lit à l'exécution est rangé à côté de lui : il n'a
+besoin d'aucun réglage pour savoir quelle version il est. Une instance
+n'appartient qu'à une version (`partiduo_instances` ou
+`partiduo_devel_instances` dans `rc.conf`) ; configuration
+`/usr/local/etc/partiduo/<instance>.env`, données `/var/db/partiduo/<instance>`,
+journal `/var/log/partiduo/<instance>.log`. Le compte `partiduo` est créé à
+l'installation s'il n'existe pas.
+
+== Sources hors ligne : `Tools/shards-tuples`
+
+poudriere construit sans réseau. Chaque shard du `shard.lock` du projet
+devient une archive GitHub (`GH_TUPLE`) extraite dans `lib/<nom>`.
+`Tools/shards-tuples` lit le `shard.lock` publié, résout chaque version en
+commit, télécharge les archives et écrit `Makefile.shards` et `distinfo` du
+port :
+
+[source,sh]
+----
+# après publication du commit de partiduo-dist à construire :
+Tools/shards-tuples aloli-crystal/partiduo-dist <commit complet> 0.1.0.20260930 finance/partiduo-app-devel
+----
+
+La version passée doit être le `DISTVERSION` du port (elle entre dans le nom
+de l'archive principale). Les `shard.lock` ne doivent contenir aucune
+dépendance `path:` : l'outil les refuse.
+
+== Machine de construction
+
+Sur la machine poudriere (FreeBSD 15.0, jail `fbsd150amd64`, arbre `default`) :
+
+[source,sh]
+----
+git clone <dépôt aloli-ports> /usr/local/poudriere/aloli-ports
+poudriere ports -c -p aloli -m null -M /usr/local/poudriere/aloli-ports
+poudriere bulk -j fbsd150amd64 -p default -O aloli finance/partiduo-app-devel
+----
+
+== À vérifier au premier passage sur la machine de construction
+
+Ces ports n'ont pas encore été construits : ils ont été écrits depuis un
+poste macOS, sans poudriere.
+
+* Détection d'OpenSSL par Crystal avec l'OpenSSL de base (`USES=ssl`,
+  `pkg-config`).
+* Durée et mémoire de la construction en `--release` du serveur (plusieurs
+  Go de mémoire).
+* `collectassets` et `collectartifacts` lancés à la construction : aucune
+  base ouverte (vérifié sous macOS).
+* Script `rc.d` : démarrage, arrêt et état d'une instance sous `daemon(8)`.

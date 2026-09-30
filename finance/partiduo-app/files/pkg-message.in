@@ -1,0 +1,18 @@
+[
+{ type: install
+  message: <<EOM
+%%PKGNAME%% est installé dans %%PARTIDUO_HOME%%.
+
+Chaque instance a sa configuration /usr/local/etc/partiduo/<instance>.env
+(root:partiduo, 640) ; elle est servie par :
+
+  sysrc %%PARTIDUO_RC%%_enable=YES
+  sysrc %%PARTIDUO_RC%%_instances+=" <instance>"
+  service %%PARTIDUO_RC%% start <instance>
+
+Ligne de commande (migrations, provisionnement) : %%PARTIDUO_NAME%%-manage.
+Le PDF des modèles AsciiDoc et Markdown : PARTIDUO_MODELES_PDF=auto dans
+la configuration de l'instance.
+EOM
+}
+]

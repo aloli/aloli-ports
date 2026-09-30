@@ -1,0 +1,140 @@
+#!/bin/sh
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# shards-tuples — sources d'un port construit hors ligne à partir d'un
+# projet Crystal (shards) : poudriere n'a pas de réseau pendant la
+# construction, chaque shard du shard.lock devient donc une archive GitHub
+# (GH_TUPLE) extraite dans lib/<nom>.
+#
+# Usage :
+#   Tools/shards-tuples COMPTE/PROJET COMMIT VERSION PORT
+#
+#   COMPTE/PROJET  dépôt GitHub du projet (ex. aloli-crystal/partiduo-dist)
+#   COMMIT         commit du projet à construire (empreinte complète)
+#   VERSION        DISTVERSION du port (ex. 0.1.0)
+#   PORT           répertoire du port (ex. finance/partiduo-app-devel)
+#
+# Lit le shard.lock du projet à ce commit, résout chaque version en commit
+# (git ls-remote), puis écrit dans PORT :
+#   Makefile.shards  GH_TAGNAME du projet et GH_TUPLE des shards ;
+#   distinfo         empreintes et tailles des archives (téléchargées dans
+#                    ${SHARDS_TUPLES_CACHE:-~/.cache/aloli-ports/distfiles}).
+#
+# Seuls git, curl, awk et sha256sum (ou shasum, ou sha256) sont requis :
+# l'outil tourne sur un poste de développement comme sur la machine de
+# construction.
+set -eu
+
+die() {
+  echo "shards-tuples : $*" >&2
+  exit 1
+}
+
+[ $# -eq 4 ] || die "usage : Tools/shards-tuples COMPTE/PROJET COMMIT VERSION PORT"
+REPO="$1"
+COMMIT="$2"
+VERSION="$3"
+PORT="$4"
+
+case "$COMMIT" in
+  *[!0-9a-f]* | "") die "COMMIT : empreinte hexadécimale attendue ($COMMIT)" ;;
+esac
+[ ${#COMMIT} -eq 40 ] || die "COMMIT : empreinte complète (40 caractères) attendue"
+[ -d "$PORT" ] || die "répertoire du port introuvable : $PORT"
+
+ACCOUNT="${REPO%%/*}"
+PROJECT="${REPO#*/}"
+DIST_SUBDIR=partiduo
+CACHE="${SHARDS_TUPLES_CACHE:-$HOME/.cache/aloli-ports/distfiles}/$DIST_SUBDIR"
+mkdir -p "$CACHE"
+
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256() { sha256sum "$1" | awk '{print $1}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  sha256() { shasum -a 256 "$1" | awk '{print $1}'; }
+else
+  sha256() { sha256 -q "$1"; }
+fi
+
+# Archive GitHub d'un commit, dans le cache ; affiche son nom de fichier.
+fetch() {
+  _file="$CACHE/$4"
+  if [ ! -s "$_file" ]; then
+    curl -fsSL -o "$_file.part" "https://codeload.github.com/$1/$2/tar.gz/$3" ||
+      die "téléchargement impossible : $1/$2 $3 (commit publié ?)"
+    mv "$_file.part" "$_file"
+  fi
+  echo "$_file"
+}
+
+# Commit désigné par la version d'un shard : empreinte (…+git.commit.<sha>)
+# ou étiquette vX.Y.Z / X.Y.Z (déréférencée si annotée).
+resolve() {
+  case "$2" in
+    *+git.commit.*) echo "${2##*+git.commit.}" ;;
+    *)
+      _refs=$(git ls-remote "$1" "refs/tags/v$2" "refs/tags/v$2^{}" "refs/tags/$2" "refs/tags/$2^{}")
+      _sha=$(echo "$_refs" | awk '/\^\{\}$/ {print $1; exit}')
+      [ -n "$_sha" ] || _sha=$(echo "$_refs" | awk 'NF {print $1; exit}')
+      [ -n "$_sha" ] || die "étiquette introuvable pour $1 $2"
+      echo "$_sha"
+      ;;
+  esac
+}
+
+LOCK=$(curl -fsSL "https://raw.githubusercontent.com/$REPO/$COMMIT/shard.lock") ||
+  die "shard.lock introuvable pour $REPO $COMMIT (commit publié ?)"
+
+# nom, source git, version — une ligne par shard.
+ENTRIES=$(echo "$LOCK" | awk '
+  /^  [^ ].*:/ { name = $1; sub(/:$/, "", name); git = ""; next }
+  /^    git:/  { git = $2; next }
+  /^    path:/ { print name > "/dev/stderr"; bad = 1; next }
+  /^    version:/ { if (git != "") print name, git, $2 }
+  END { if (bad) exit 1 }
+') || die "shards en path: dans shard.lock (ci-dessus) : sources introuvables hors du poste de développement"
+[ -n "$ENTRIES" ] || die "aucun shard lu dans shard.lock"
+
+MAIN_FILE="$ACCOUNT-$PROJECT-$VERSION-${COMMIT}_GH0.tar.gz"
+TUPLES=""
+DISTINFO="TIMESTAMP = $(date +%s)"
+
+add_distinfo() {
+  DISTINFO="$DISTINFO
+SHA256 ($DIST_SUBDIR/$1) = $(sha256 "$2")
+SIZE ($DIST_SUBDIR/$1) = $(wc -c <"$2" | tr -d ' ')"
+}
+
+echo "== $REPO $COMMIT"
+add_distinfo "$MAIN_FILE" "$(fetch "$ACCOUNT" "$PROJECT" "$COMMIT" "$MAIN_FILE")"
+
+echo "$ENTRIES" | while read -r name url version; do
+  case "$url" in
+    https://github.com/*) ;;
+    *) die "$name : source hors GitHub ($url)" ;;
+  esac
+  path="${url#https://github.com/}"
+  path="${path%.git}"
+  sha=$(resolve "$url" "$version")
+  [ ${#sha} -eq 40 ] || die "$name : commit incomplet ($sha)"
+  group=$(echo "$name" | tr -c 'A-Za-z0-9\n' '_')
+  printf '%s %s %s %s\n' "$name" "$path" "$sha" "$group"
+done >"$CACHE/.tuples.$$" || { rm -f "$CACHE/.tuples.$$"; exit 1; }
+
+while read -r name path sha group; do
+  echo "   $name ($path ${sha%"${sha#???????}"})"
+  file="${path%%/*}-${path#*/}-${sha}_GH0.tar.gz"
+  add_distinfo "$file" "$(fetch "${path%%/*}" "${path#*/}" "$sha" "$file")"
+  TUPLES="$TUPLES		${path%%/*}:${path#*/}:$sha:$group/lib/$name \\
+"
+done <"$CACHE/.tuples.$$"
+count=$(wc -l <"$CACHE/.tuples.$$" | tr -d ' ')
+rm -f "$CACHE/.tuples.$$"
+
+{
+  echo "# Produit par Tools/shards-tuples ($REPO, shard.lock) — ne pas modifier à la main."
+  echo "GH_TAGNAME=	$COMMIT"
+  printf 'GH_TUPLE=	\\\n%s' "$TUPLES" | sed '$ s/ \\$//'
+} >"$PORT/Makefile.shards"
+echo "$DISTINFO" >"$PORT/distinfo"
+echo "== $PORT : Makefile.shards et distinfo ($count shards)"

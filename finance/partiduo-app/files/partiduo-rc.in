@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# PROVIDE: %%PARTIDUO_RC%%
+# REQUIRE: LOGIN postgresql
+# KEYWORD: shutdown
+#
+# Instances Partiduo servies par %%PKGNAME%% (%%PARTIDUO_HOME%%).
+#
+# Dans /etc/rc.conf :
+#   %%PARTIDUO_RC%%_enable="YES"
+#   %%PARTIDUO_RC%%_instances="dupont martin"   # instances de cette version
+#   %%PARTIDUO_RC%%_user="partiduo"             # compte des serveurs
+#
+# Pour chaque instance <i> :
+#   /usr/local/etc/partiduo/<i>.env   variables (DATABASE_URL, MARTEN_SECRET_KEY,
+#                                     MARTEN_ALLOWED_HOSTS, PORT, PARTIDUO_…),
+#                                     root:partiduo, 640 ;
+#   /var/db/partiduo/<i>              répertoire de travail (pièces jointes) ;
+#   /var/log/partiduo/<i>.log         journal ;
+#   /var/run/partiduo/<i>.pid         processus superviseur (daemon -r).
+#
+# Une instance n'appartient qu'à une version : ne la déclarez pas à la fois
+# dans partiduo_instances et partiduo_devel_instances.
+#
+#   service %%PARTIDUO_RC%% start [instance]
+
+. /etc/rc.subr
+
+name=%%PARTIDUO_RC%%
+rcvar=%%PARTIDUO_RC%%_enable
+
+load_rc_config $name
+
+: ${%%PARTIDUO_RC%%_enable:="NO"}
+: ${%%PARTIDUO_RC%%_instances:=""}
+: ${%%PARTIDUO_RC%%_user:="partiduo"}
+
+_instances="${%%PARTIDUO_RC%%_instances}"
+_user="${%%PARTIDUO_RC%%_user}"
+
+# Sans instance nommée : chaque instance déclarée, l'une après l'autre.
+if [ -z "$2" ]; then
+	if [ -n "$1" ] && [ -n "${_instances}" ]; then
+		_status=0
+		for _i in ${_instances}; do
+			echo "===> ${name} ${_i}"
+			/usr/local/etc/rc.d/${name} "$1" "${_i}" || _status=1
+		done
+		exit ${_status}
+	fi
+	[ -n "$1" ] && [ -z "${_instances}" ] &&
+		echo "${name} : aucune instance (${name}_instances)" >&2
+	run_rc_command "$1"
+	exit
+fi
+
+instance="$2"
+case " ${_instances} " in
+*" ${instance} "*) ;;
+*)
+	echo "${name} : instance ${instance} absente de ${name}_instances" >&2
+	exit 1
+	;;
+esac
+
+envfile="/usr/local/etc/partiduo/${instance}.env"
+workdir="/var/db/partiduo/${instance}"
+logfile="/var/log/partiduo/${instance}.log"
+pidfile="/var/run/partiduo/${instance}.pid"
+server="%%PARTIDUO_HOME%%/bin/partiduo-server"
+
+command="/usr/sbin/daemon"
+procname="/usr/sbin/daemon"
+command_args="-r -R 5 -P ${pidfile} -o ${logfile} -T ${name}-${instance} -u ${_user} \
+	/bin/sh -c 'cd ${workdir} && set -a && . ${envfile} && set +a && exec ${server}'"
+start_precmd="${name}_prestart"
+
+%%PARTIDUO_RC%%_prestart()
+{
+	if [ ! -r "${envfile}" ]; then
+		err 1 "${envfile} introuvable"
+	fi
+	install -d -o root -g wheel -m 755 /var/run/partiduo
+	install -d -o "${_user}" -g "${_user}" -m 750 /var/log/partiduo "${workdir}"
+}
+
+run_rc_command "$1"

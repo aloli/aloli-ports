@@ -1,0 +1,5 @@
+# Produit par Tools/shards-tuples — ne pas modifier à la main.
+# En attente : la branche production de partiduo-dist n'existe pas encore
+# (elle suppose les branches production des dépôts partiduo-*). Une fois
+# publiée : Tools/shards-tuples aloli-crystal/partiduo-dist <commit> <version> finance/partiduo-app
+IGNORE=		attend la branche production de partiduo-dist (Tools/shards-tuples)

@@ -1,0 +1,10 @@
+Partiduo is an invoicing and accounting application for small businesses,
+self-employed and liberal professions (France, Belgium). This package
+installs the instance server of the production distribution
+(aloli-crystal/partiduo-dist): core, Bulma web interface and all
+extensions, each enabled per instance, with the PDF converter of the
+MODELES extension.
+
+Several instances run on one server, one daemon each, under
+/usr/local/etc/rc.d/partiduo. The development version (partiduo-app-devel)
+installs in its own directory and can run alongside.

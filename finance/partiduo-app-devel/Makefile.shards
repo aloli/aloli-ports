@@ -1,0 +1,4 @@
+# Produit par Tools/shards-tuples — ne pas modifier à la main.
+# En attente de la publication de partiduo-dist (branche development) :
+# Tools/shards-tuples aloli-crystal/partiduo-dist <commit> <version> finance/partiduo-app-devel
+IGNORE=		attend la publication de partiduo-dist (Tools/shards-tuples)
