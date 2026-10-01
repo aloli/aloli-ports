@@ -1,5 +1,5 @@
 # Produit par Tools/shards-tuples (aloli-crystal/partiduo-admin, finance/partiduo-admin-devel/shard.lock.packaging) — ne pas modifier à la main.
-GH_TAGNAME=	ece5a01a30363d22d73d597690e05a2aedfdcaee
+GH_TAGNAME=	c71757064b1ff5ecc5b6a96c4c522648bc78f8e8
 GH_TUPLE=	\
 		aloli-crystal:authn:be98021bf0da7c8fd8306b3d715e425aec5e7aa3:authn/lib/authn \
 		jgaskins:bcrypt:4004f17053cba6f2c752ea83162f405143ab541c:bcrypt/lib/bcrypt \

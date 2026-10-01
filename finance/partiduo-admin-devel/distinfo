@@ -1,6 +1,6 @@
-TIMESTAMP = 1790804885
-SHA256 (partiduo/aloli-crystal-partiduo-admin-0.1.0.20260930-ece5a01a30363d22d73d597690e05a2aedfdcaee_GH0.tar.gz) = e39e49542315a391f638d5c615e8e4a8f1e4760e9f3ac79b4e266848dbbfc236
-SIZE (partiduo/aloli-crystal-partiduo-admin-0.1.0.20260930-ece5a01a30363d22d73d597690e05a2aedfdcaee_GH0.tar.gz) = 803806
+TIMESTAMP = 1790844749
+SHA256 (partiduo/aloli-crystal-partiduo-admin-0.1.0.20261001-c71757064b1ff5ecc5b6a96c4c522648bc78f8e8_GH0.tar.gz) = 3da91a0c012e2150dc94c1c6d868cc3e5789534e946e7665239bf2d397b8bd0d
+SIZE (partiduo/aloli-crystal-partiduo-admin-0.1.0.20261001-c71757064b1ff5ecc5b6a96c4c522648bc78f8e8_GH0.tar.gz) = 807939
 SHA256 (partiduo/aloli-crystal-authn-be98021bf0da7c8fd8306b3d715e425aec5e7aa3_GH0.tar.gz) = f2e91f45b240ce52f943b464f22b2efb8dac7a021db360b4bac14c4fa6480d7d
 SIZE (partiduo/aloli-crystal-authn-be98021bf0da7c8fd8306b3d715e425aec5e7aa3_GH0.tar.gz) = 17558
 SHA256 (partiduo/jgaskins-bcrypt-4004f17053cba6f2c752ea83162f405143ab541c_GH0.tar.gz) = 1258481d41efa8c16cfb184cd1f896e0a0ea01b2916e1e9be22412b5122c6f59
