@@ -1,5 +1,6 @@
 PORTNAME=	partiduo-app
 DISTVERSION?=	0.1.0
+PORTREVISION=	1
 CATEGORIES=	finance
 DIST_SUBDIR=	partiduo
 
@@ -25,12 +26,15 @@ USE_GITHUB=	yes
 GH_ACCOUNT=	aloli-crystal
 GH_PROJECT=	partiduo-dist
 
-# Deux versions cohabitent sur un serveur, chacune dans son répertoire :
-# partiduo-app (branche production de partiduo-dist) et partiduo-app-devel
-# (branche development, port esclave). Tout ce qu'un programme lit à
-# l'exécution est rangé à côté de lui (bin/, share/).
-PARTIDUO_NAME?=	partiduo
-PARTIDUO_RC?=	partiduo
+# Une seule version par serveur : partiduo-app (branche production de
+# partiduo-dist) et partiduo-app-devel (branche development, port esclave,
+# pour le serveur de test) s'installent aux mêmes emplacements.
+CONFLICTS_INSTALL?=	partiduo-app-devel
+
+# Tout ce qu'un programme lit à l'exécution est rangé à côté de lui (bin/,
+# share/).
+PARTIDUO_NAME=	partiduo
+PARTIDUO_RC=	partiduo
 PARTIDUO_HOME=	${PREFIX}/lib/${PARTIDUO_NAME}
 
 SUB_FILES=	partiduo-rc pkg-message

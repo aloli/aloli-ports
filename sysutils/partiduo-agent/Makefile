@@ -1,4 +1,5 @@
 PORTNAME=	partiduo-agent
+PORTREVISION=	1
 CATEGORIES=	sysutils
 DIST_SUBDIR=	partiduo
 

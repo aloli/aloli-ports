@@ -21,7 +21,8 @@ convertisseur PDF de MODELES. Source : branche `production` de
 
 |`finance/partiduo-app-devel`
 |`partiduo-app-devel`
-|Même chose, branche `development` (port esclave).
+|Même chose, branche `development` (port esclave). Destiné au serveur de
+test ; *exclusif* de `partiduo-app` (mêmes emplacements).
 
 |`finance/partiduo-admin`
 |`partiduo-admin`
@@ -44,12 +45,16 @@ enveloppes de sudo et leurs règles. Même source que `partiduo-admin`.
 |Même chose, branche `development` (port esclave).
 |===
 
-Les deux versions *cohabitent* sur un serveur, chacune dans son répertoire :
+Une seule version par serveur : `partiduo-app-devel` s'installe aux mêmes
+emplacements que `partiduo-app`, avec lequel il est en conflit
+(`CONFLICTS_INSTALL`, et surtout mêmes fichiers : `pkg` ne laisse pas
+les deux installés ensemble). La version de développement va sur le serveur de
+test, la version stable sur les serveurs de production.
 
 [source]
 ----
-/usr/local/lib/partiduo/        /usr/local/lib/partiduo-devel/
-  bin/partiduo-server             (mêmes fichiers)
+/usr/local/lib/partiduo/
+  bin/partiduo-server
   bin/partiduo-manage
   bin/partiduo-modeles-pdf
   share/partiduo/artifacts/       gabarits et traductions (collectartifacts)
@@ -57,22 +62,21 @@ Les deux versions *cohabitent* sur un serveur, chacune dans son répertoire :
   share/partiduo-modeles-pdf/fonts -> /usr/local/share/fonts/dejavu
   bin/partiduo-provision          création d'une instance (partiduo-app)
   deploy/templates/               ses gabarits
-/usr/local/bin/partiduo-manage  /usr/local/bin/partiduo-devel-manage
-/usr/local/bin/partiduo-provision  /usr/local/bin/partiduo-devel-provision
-/usr/local/etc/rc.d/partiduo    /usr/local/etc/rc.d/partiduo_devel
+/usr/local/bin/partiduo-manage
+/usr/local/bin/partiduo-provision
+/usr/local/etc/rc.d/partiduo
 ----
 
 Tout ce qu'un programme lit à l'exécution est rangé à côté de lui : il n'a
-besoin d'aucun réglage pour savoir quelle version il est. Une instance
-n'appartient qu'à une version (`partiduo_instances` ou
-`partiduo_devel_instances` dans `rc.conf`) ; configuration
+besoin d'aucun réglage pour savoir quelle version il est. Les instances sont
+déclarées dans `partiduo_instances` (`rc.conf`) ; configuration
 `/usr/local/etc/partiduo/<instance>.env`, données `/var/db/partiduo/<instance>`,
 journal `/var/log/partiduo/<instance>.log`. Le compte `partiduo` est créé à
 l'installation s'il n'existe pas.
 
 === Administration et exécutant
 
-Au contraire des instances, il n'y a qu'*une* administration et qu'*un*
+Comme pour `partiduo-app`, il n'y a qu'*une* administration et qu'*un*
 exécutant par serveur : `partiduo-admin-devel` et `partiduo-agent-devel`
 s'installent aux mêmes emplacements que `partiduo-admin` et
 `partiduo-agent`, avec lesquels ils sont en conflit (`CONFLICTS_INSTALL`).

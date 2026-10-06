@@ -1,4 +1,5 @@
 PORTNAME=	partiduo-admin
+PORTREVISION=	1
 CATEGORIES=	finance
 DIST_SUBDIR=	partiduo
 

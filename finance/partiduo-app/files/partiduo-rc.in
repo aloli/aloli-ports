@@ -8,7 +8,7 @@
 #
 # Dans /etc/rc.conf :
 #   %%PARTIDUO_RC%%_enable="YES"
-#   %%PARTIDUO_RC%%_instances="dupont martin"   # instances de cette version
+#   %%PARTIDUO_RC%%_instances="dupont martin"   # instances servies
 #   %%PARTIDUO_RC%%_account="partiduo"          # compte des serveurs
 #   (pas ${name}_user : variable réservée de rc.subr, qui lancerait alors
 #   daemon(8) lui-même sous ce compte, sans droit d'écrire le pid ni de -u)
@@ -25,9 +25,6 @@
 # (partiduo-manage migrate) : après une mise à jour du paquet (pkg upgrade,
 # par beryl), « service %%PARTIDUO_RC%% restart » suffit. Une instance dont
 # la migration échoue ne démarre pas (voir son journal).
-#
-# Une instance n'appartient qu'à une version : ne la déclarez pas à la fois
-# dans partiduo_instances et partiduo_devel_instances.
 #
 #   service %%PARTIDUO_RC%% start [instance]
 
@@ -79,7 +76,11 @@ manage="%%PARTIDUO_HOME%%/bin/partiduo-manage"
 
 command="/usr/sbin/daemon"
 procname="/usr/sbin/daemon"
-command_args="-r -R 5 -P ${pidfile} -o ${logfile} -T ${name}-${instance} -u ${_user} \
+# -f : stdin, stdout et stderr de daemon(8) sur /dev/null (la sortie du
+# serveur va au journal par -o). Sans lui, le superviseur garde ceux de qui
+# l'a lancé : une session SSH (service … start à distance, beryl apply)
+# ne se termine alors jamais.
+command_args="-f -r -R 5 -P ${pidfile} -o ${logfile} -T ${name}-${instance} -u ${_user} \
 	/bin/sh -c 'cd ${workdir} && set -a && . ${envfile} && set +a && exec ${server}'"
 start_precmd="${name}_prestart"
 

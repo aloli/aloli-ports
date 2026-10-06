@@ -46,7 +46,11 @@ manage="%%PARTIDUO_ADMIN_HOME%%/bin/partiduo-admin-manage"
 
 command="/usr/sbin/daemon"
 procname="/usr/sbin/daemon"
-command_args="-r -R 5 -P ${pidfile} -o ${logfile} -T ${name} -u ${_account} \
+# -f : stdin, stdout et stderr de daemon(8) sur /dev/null (la sortie du
+# serveur va au journal par -o). Sans lui, le superviseur garde ceux de qui
+# l'a lancé : une session SSH (service … start à distance, beryl apply)
+# ne se termine alors jamais.
+command_args="-f -r -R 5 -P ${pidfile} -o ${logfile} -T ${name} -u ${_account} \
 	/bin/sh -c 'cd ${workdir} && set -a && . ${envfile} && set +a && exec ${server}'"
 start_precmd="${name}_prestart"
 
