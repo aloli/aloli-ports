@@ -15,7 +15,7 @@ shards:
 
   db:
     git: https://github.com/crystal-lang/crystal-db.git
-    version: 0.14.0
+    version: 0.15.0
 
   ed25519:
     git: https://github.com/spider-gazelle/ed25519.git
@@ -55,7 +55,7 @@ shards:
 
   pg:
     git: https://github.com/will/crystal-pg.git
-    version: 0.30.0
+    version: 0.31.0
 
   totp:
     git: https://github.com/aloli-crystal/totp.git
